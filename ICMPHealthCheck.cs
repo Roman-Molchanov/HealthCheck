@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Linq;
-using System.Net.Mime;
 using System.Net.NetworkInformation;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace HealthCheck
@@ -41,32 +36,6 @@ namespace HealthCheck
             {
                 return HealthCheckResult.Unhealthy($"ICMP to {host} failed: {ex.Message}", ex);
             }
-        }
-    }
-
-    public class CustomHealthCheckOptions : HealthCheckOptions
-    {
-        public CustomHealthCheckOptions(): base()
-        {
-            var jsonSerializerOptions = new JsonSerializerOptions { WriteIndented = true };
-            ResponseWriter = async (httpContext, healthReport) =>
-            {
-                httpContext.Response.ContentType = MediaTypeNames.Application.Json;
-                httpContext.Response.StatusCode = StatusCodes.Status200OK;
-                var res = JsonSerializer.Serialize(new
-                {
-                    checks = healthReport.Entries.Select(e => new
-                    {
-                            name = e.Key,
-                            responseTime = e.Value.Duration.TotalMilliseconds,
-                            status = e.Value.Status.ToString(),
-                            description = e.Value.Description
-                    }),
-                    totalStatus = healthReport.Status,
-                    totalResponseTime = healthReport.TotalDuration.TotalMilliseconds
-                }, jsonSerializerOptions);
-                await httpContext.Response.WriteAsync(res);
-            };
         }
     }
 }
